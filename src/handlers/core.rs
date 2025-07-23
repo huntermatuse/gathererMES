@@ -69,9 +69,21 @@ impl EquipmentTypes {
     }
 }
 
+// mode group crud and more
 impl ModeGroups {
     // create
+    pub fn create(
+        store: &ModeGroupStore,
+        group_name: String,
+        group_description: Option<String>,
+    ) -> Result<bool, String> {
+        Ok(false)
+    }
     // read
+    pub fn read_all(store: &ModeGroupStore) -> Result<Vec<ModeGroups>, String> {
+        let data = store.lock().map_err(|_| "Failed to acquire lock")?;
+        Ok(data.clone())
+    }
     // update
     // delete
 }
