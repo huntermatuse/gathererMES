@@ -125,68 +125,22 @@ pub fn init_mode_store() -> ModesStore {
         Modes {
             mode_id: 1,
             mode_group_id: 1,
-            mode_code: 0,
-            mode_description: Some("Disabled".to_string()),
+            mode_description: "Disabled".to_string(),
         },
         Modes {
             mode_id: 2,
             mode_group_id: 1,
-            mode_code: 1,
-            mode_description: Some("Running".to_string()),
+            mode_description: "Production".to_string(),
         },
         Modes {
             mode_id: 3,
             mode_group_id: 1,
-            mode_code: 2,
-            mode_description: Some("Change Over".to_string()),
-        },
-        Modes {
-            mode_id: 3,
-            mode_group_id: 1,
-            mode_code: 4,
-            mode_description: Some("Idle".to_string()),
+            mode_description: "Idle".to_string(),
         },
         Modes {
             mode_id: 4,
             mode_group_id: 1,
-            mode_code: 5,
-            mode_description: Some("E-Stop".to_string()),
-        },
-        Modes {
-            mode_id: 5,
-            mode_group_id: 1,
-            mode_code: 6,
-            mode_description: Some("Blocked".to_string()),
-        },
-        Modes {
-            mode_id: 6,
-            mode_group_id: 1,
-            mode_code: 7,
-            mode_description: Some("Starved".to_string()),
-        },
-        Modes {
-            mode_id: 7,
-            mode_group_id: 1,
-            mode_code: 8,
-            mode_description: Some("Planned Downtime".to_string()),
-        },
-        Modes {
-            mode_id: 8,
-            mode_group_id: 1,
-            mode_code: 9,
-            mode_description: Some("Unplanned Downtime".to_string()),
-        },
-        Modes {
-            mode_id: 9,
-            mode_group_id: 1,
-            mode_code: 10,
-            mode_description: Some("User Planned Downtime".to_string()),
-        },
-        Modes {
-            mode_id: 10,
-            mode_group_id: 1,
-            mode_code: 11,
-            mode_description: Some("User Unplanned Downtime".to_string()),
+            mode_description: "Changeover".to_string(),
         },
     ];
 
