@@ -127,20 +127,17 @@ async fn get_modes() -> Json<ApiResponse<Vec<Modes>>> {
         Modes {
             mode_id: 1,
             mode_group_id: 1,
-            mode_code: 0,
-            mode_description: Some("Disabled".to_string()),
+            mode_description: "Disabled".to_string(),
         },
         Modes {
             mode_id: 2,
             mode_group_id: 1,
-            mode_code: 1,
-            mode_description: Some("Running".to_string()),
+            mode_description: "Running".to_string(),
         },
         Modes {
             mode_id: 3,
             mode_group_id: 1,
-            mode_code: 2,
-            mode_description: Some("Change Over".to_string()),
+            mode_description: "Change Over".to_string(),
         },
     ];
     Json(ApiResponse::success(modes))
