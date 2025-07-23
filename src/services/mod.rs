@@ -1,0 +1,1 @@
+pub mod equipment_type_service;

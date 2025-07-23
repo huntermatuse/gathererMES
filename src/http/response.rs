@@ -1,6 +1,10 @@
+use axum::{
+    Json,
+    http::StatusCode,
+    response::{IntoResponse, Response},
+};
 use chrono::{DateTime, Utc};
 use serde::Serialize;
-use axum::response::Json;
 
 #[derive(Serialize)]
 pub struct SuccessResponse<T> {
@@ -62,10 +66,17 @@ impl<T> ApiResponse<T> {
     }
 }
 
+// not always being used
+#[allow(dead_code)]
 pub async fn not_implemented() -> Json<ApiResponse<ErrorResponse>> {
     Json(ApiResponse::error_str(
         "this endpoint has not been completed yet",
     ))
+}
+
+pub async fn handler_404() -> Response {
+    let body = ApiResponse::<ErrorResponse>::error_str("route not found");
+    (StatusCode::NOT_FOUND, Json(body)).into_response()
 }
 
 // TODO: claude tests, need to review
