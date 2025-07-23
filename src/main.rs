@@ -156,41 +156,78 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         equipment_types_store: init_equipment_type_store(),
     };
 
+    // endpoints for each of the action groups.
+    // action groups are broken into the two parts of the static data api.
+    // more on these types can be found in the models::core and
+    // models::operations respectively.
+    // - Core
+    //     - Equipment Types
+    //     - Equipment
+    //     - Mode Groups
+    //     - Mode(s)
+    //     - State Groups
+    //     - State(s)
+    // - Operations
+    //     - Products
+    //     - Work Orders
+    //     - Jobs
+    //
     let app = Router::new()
-        // Updated equipment type endpoints with actual CRUD
+        //
+        // core schema
+        //
+        // equipment type endpoints
         .route("/equipment-types", post(create_equipment_type))
         .route("/equipment-types", get(get_equipment_types))
         .route("/equipment-types/{id}", get(get_equipment_type_by_id))
         .route("/equipment-types/{id}", post(update_equipment_type))
         .route("/equipment-types/{id}/delete", post(delete_equipment_type))
+        //
         // equipment endpoints
         .route("/equipment", get(get_equipment))
         .route("/equipment/{id}", get(not_implemented))
+        //
         // mode group endpoints
-        .route("/mode-groups", post(not_implemented)) //create
-        .route("/mode-groups", get(get_mode_groups)) //read
-        .route("/mode-groups/{id}", get(not_implemented)) //read single
-        .route("/mode-groups/{id}", post(not_implemented)) //update
-        .route("/mode-groups/{id}/delete", post(not_implemented)) //delete
-        // modes endpoints
-        .route("/modes", post(not_implemented)) // create
-        .route("/modes", get(get_modes)) // read
-        .route("/modes/{id}", get(not_implemented)) // read single
-        .route("/modes/update", post(not_implemented)) // update
-        .route("/modes/delete/{id}", post(not_implemented)) // delete
-        // Other endpoints...
+        .route("/mode-groups", post(not_implemented))
+        .route("/mode-groups", get(get_mode_groups))
+        .route("/mode-groups/{id}", get(not_implemented))
+        .route("/mode-groups/{id}", post(not_implemented))
+        .route("/mode-groups/{id}/delete", post(not_implemented))
+        //
+        // mode endpoints
+        .route("/modes", post(not_implemented))
+        .route("/modes", get(get_modes))
+        .route("/modes/{id}", get(not_implemented))
+        .route("/modes/update", post(not_implemented))
+        .route("/modes/delete/{id}", post(not_implemented))
+        //
+        // state group endpoints
         .route("/state-groups", get(not_implemented))
         .route("/state-groups/{id}", get(not_implemented))
+        //
+        // state endpoints
         .route("/states", get(not_implemented))
         .route("/states/{id}", get(not_implemented))
+        //
+        // operations schema
+        //
+        // product endpoints
         .route("/products", get(not_implemented))
         .route("/products/{id}", get(not_implemented))
+        //
+        // work order endpoints
         .route("/work-orders", get(not_implemented))
         .route("/work-orders/{id}", get(not_implemented))
+        //
+        // job endpoints
         .route("/jobs", get(not_implemented))
         .route("/jobs/{id}", get(not_implemented))
+        //
+        // api endpoints
+        //
+        // api status endpoint
         .route("/status", get(health_check))
-        .with_state(app_state); // Pass the state to all handlers
+        .with_state(app_state);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 16002));
     println!("Server running on http://{}", addr);
