@@ -12,13 +12,16 @@ mod handlers;
 mod models;
 
 use api::response::{ApiResponse, ErrorResponse, SuccessResponse};
-use handlers::core::{EquipmentTypeStore, init_equipment_type_store};
+use handlers::core::{
+    EquipmentTypeStore, ModeGroupStore, init_equipment_type_store, init_mode_group_store,
+};
 use models::core::{Equipment, EquipmentTypes, ModeGroups, Modes};
 
 // app state to hold our data stores
 #[derive(Clone)]
 pub struct AppState {
     pub equipment_types_store: EquipmentTypeStore,
+    pub mode_group_store: ModeGroupStore,
 }
 
 async fn health_check() -> Json<SuccessResponse<&'static str>> {
@@ -86,6 +89,15 @@ async fn delete_equipment_type(
     }
 }
 
+async fn get_mode_groups(
+    State(state): State<AppState>,
+) -> Json<ApiResponse<Vec<ModeGroups>>> {
+    match ModeGroups::read_all(&state.mode_group_store) {
+        Ok(equipment_types) => Json(ApiResponse::success(equipment_types)),
+        Err(error) => Json(ApiResponse::error(error)),
+    }
+}
+
 // Keep your existing handlers for other endpoints (for now)
 async fn get_equipment() -> Json<ApiResponse<Vec<Equipment>>> {
     let eqs = vec![
@@ -113,14 +125,14 @@ async fn get_equipment() -> Json<ApiResponse<Vec<Equipment>>> {
     Json(ApiResponse::success(eqs))
 }
 
-async fn get_mode_groups() -> Json<ApiResponse<Vec<ModeGroups>>> {
-    let default_mode_group = vec![ModeGroups {
-        mode_group_id: 1,
-        mode_group_name: "GathererMES_Default".to_string(),
-        mode_group_description: Some("A default group that should work for most cases".to_string()),
-    }];
-    Json(ApiResponse::success(default_mode_group))
-}
+// async fn get_mode_groups() -> Json<ApiResponse<Vec<ModeGroups>>> {
+//     let default_mode_group = vec![ModeGroups {
+//         mode_group_id: 1,
+//         mode_group_name: "GathererMES_Default".to_string(),
+//         mode_group_description: Some("A default group that should work for most cases".to_string()),
+//     }];
+//     Json(ApiResponse::success(default_mode_group))
+// }
 
 async fn get_modes() -> Json<ApiResponse<Vec<Modes>>> {
     let modes = vec![
@@ -154,6 +166,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Initialize your data stores
     let app_state = AppState {
         equipment_types_store: init_equipment_type_store(),
+        mode_group_store: init_mode_group_store(),
     };
 
     // endpoints for each of the action groups.
