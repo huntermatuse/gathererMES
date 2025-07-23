@@ -1,5 +1,6 @@
 use chrono::{DateTime, Utc};
 use serde::Serialize;
+use axum::response::Json;
 
 #[derive(Serialize)]
 pub struct SuccessResponse<T> {
@@ -61,7 +62,13 @@ impl<T> ApiResponse<T> {
     }
 }
 
-// Usage examples
+pub async fn not_implemented() -> Json<ApiResponse<ErrorResponse>> {
+    Json(ApiResponse::error_str(
+        "this endpoint has not been completed yet",
+    ))
+}
+
+// TODO: claude tests, need to review
 #[cfg(test)]
 mod tests {
     use super::*;
