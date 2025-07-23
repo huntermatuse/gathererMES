@@ -44,8 +44,7 @@ pub struct ModeGroups {
 pub struct Modes {
     pub mode_id: i32,
     pub mode_group_id: i32,
-    pub mode_code: i32,
-    pub mode_description: Option<String>,
+    pub mode_description: String,
 }
 
 #[derive(Serialize, Deserialize)]
