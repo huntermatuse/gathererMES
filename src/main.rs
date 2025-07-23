@@ -1,3 +1,4 @@
+use anyhow::Context;
 use axum::{
     Router,
     extract::{Path, State},
@@ -5,13 +6,18 @@ use axum::{
     routing::{get, post},
 };
 use chrono::Utc;
+use clap::Parser;
 use std::net::SocketAddr;
+use std::sync::{Arc, RwLock};
+use sqlx::postgres::PgPoolOptions;
 
 mod api;
 mod handlers;
 mod models;
+mod config;
 
 use api::response::{ApiResponse, ErrorResponse, SuccessResponse};
+use crate::{api::core::get_equipment_types, config::Config};
 use handlers::core::{
     EquipmentTypeStore, ModeGroupStore, init_equipment_type_store, init_mode_group_store,
 };
@@ -21,138 +27,10 @@ use models::core::{Equipment, EquipmentTypes, ModeGroups, Modes};
 #[derive(Clone)]
 pub struct AppState {
     pub equipment_types_store: EquipmentTypeStore,
-    pub mode_group_store: ModeGroupStore,
 }
 
 async fn health_check() -> Json<SuccessResponse<&'static str>> {
     Json(SuccessResponse::new("healthy"))
-}
-
-// updated equipment types handlers using CRUD
-async fn get_equipment_types(
-    State(state): State<AppState>,
-) -> Json<ApiResponse<Vec<EquipmentTypes>>> {
-    match EquipmentTypes::get_all(&state.equipment_types_store) {
-        Ok(equipment_types) => Json(ApiResponse::success(equipment_types)),
-        Err(error) => Json(ApiResponse::error(error)),
-    }
-}
-
-async fn get_equipment_type_by_id(
-    State(state): State<AppState>,
-    Path(id): Path<i8>,
-) -> Json<ApiResponse<Option<EquipmentTypes>>> {
-    // TODO: check if the provided id is i8 and is in the range of eqType IDs
-    match EquipmentTypes::get_by_id(&state.equipment_types_store, id) {
-        Ok(equipment_type) => Json(ApiResponse::success(equipment_type)),
-        Err(error) => Json(ApiResponse::error(error)),
-    }
-}
-
-// For create, you'd need to extract JSON from the request body
-// This is a simplified version - you'd typically use a CreateEquipmentTypeRequest struct
-async fn create_equipment_type(
-    State(state): State<AppState>,
-    // In real implementation, you'd extract JSON body here
-    // Json(request): Json<CreateEquipmentTypeRequest>
-) -> Json<ApiResponse<EquipmentTypes>> {
-    // Hardcoded for example - replace with actual request data
-    let type_name = "New Equipment Type".to_string();
-
-    match EquipmentTypes::create(&state.equipment_types_store, type_name) {
-        Ok(new_equipment_type) => Json(ApiResponse::success(new_equipment_type)),
-        Err(error) => Json(ApiResponse::error(error)),
-    }
-}
-
-async fn update_equipment_type(
-    State(state): State<AppState>,
-    Path(id): Path<i8>,
-    // In real implementation: Json(request): Json<UpdateEquipmentTypeRequest>
-) -> Json<ApiResponse<Option<EquipmentTypes>>> {
-    // Hardcoded for example
-    let new_name = "Updated Equipment Type".to_string();
-
-    match EquipmentTypes::update(&state.equipment_types_store, id, new_name) {
-        Ok(updated_equipment_type) => Json(ApiResponse::success(updated_equipment_type)),
-        Err(error) => Json(ApiResponse::error(error)),
-    }
-}
-
-async fn delete_equipment_type(
-    State(state): State<AppState>,
-    Path(id): Path<i8>,
-) -> Json<ApiResponse<bool>> {
-    match EquipmentTypes::delete(&state.equipment_types_store, id) {
-        Ok(deleted) => Json(ApiResponse::success(deleted)),
-        Err(error) => Json(ApiResponse::error(error)),
-    }
-}
-
-async fn get_mode_groups(
-    State(state): State<AppState>,
-) -> Json<ApiResponse<Vec<ModeGroups>>> {
-    match ModeGroups::read_all(&state.mode_group_store) {
-        Ok(equipment_types) => Json(ApiResponse::success(equipment_types)),
-        Err(error) => Json(ApiResponse::error(error)),
-    }
-}
-
-// Keep your existing handlers for other endpoints (for now)
-async fn get_equipment() -> Json<ApiResponse<Vec<Equipment>>> {
-    let eqs = vec![
-        Equipment {
-            equipment_id: 1,
-            equipment_name: "eq_Test_1".to_string(),
-            equipment_type_id: 1,
-            equipment_parent_id: None,
-            equipment_enabled: true,
-            equipment_metadata: None,
-            created_at: Some(Utc::now()),
-            updated_at: Some(Utc::now()),
-        },
-        Equipment {
-            equipment_id: 2,
-            equipment_name: "eq_Test_2".to_string(),
-            equipment_type_id: 2,
-            equipment_parent_id: Some(1),
-            equipment_enabled: true,
-            equipment_metadata: None,
-            created_at: Some(Utc::now()),
-            updated_at: Some(Utc::now()),
-        },
-    ];
-    Json(ApiResponse::success(eqs))
-}
-
-// async fn get_mode_groups() -> Json<ApiResponse<Vec<ModeGroups>>> {
-//     let default_mode_group = vec![ModeGroups {
-//         mode_group_id: 1,
-//         mode_group_name: "GathererMES_Default".to_string(),
-//         mode_group_description: Some("A default group that should work for most cases".to_string()),
-//     }];
-//     Json(ApiResponse::success(default_mode_group))
-// }
-
-async fn get_modes() -> Json<ApiResponse<Vec<Modes>>> {
-    let modes = vec![
-        Modes {
-            mode_id: 1,
-            mode_group_id: 1,
-            mode_description: "Disabled".to_string(),
-        },
-        Modes {
-            mode_id: 2,
-            mode_group_id: 1,
-            mode_description: "Running".to_string(),
-        },
-        Modes {
-            mode_id: 3,
-            mode_group_id: 1,
-            mode_description: "Change Over".to_string(),
-        },
-    ];
-    Json(ApiResponse::success(modes))
 }
 
 async fn not_implemented() -> Json<ApiResponse<ErrorResponse>> {
@@ -163,11 +41,40 @@ async fn not_implemented() -> Json<ApiResponse<ErrorResponse>> {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // load .env file if it exists break if it doesn't exist
+    dotenv::dotenv().ok();
+    
+    // init the logger
+    env_logger::init();
+    
+    // parse configuration from CLI args and environment
+    let config: Config = config::Config::parse();
+
     // Initialize your data stores
     let app_state = AppState {
         equipment_types_store: init_equipment_type_store(),
-        mode_group_store: init_mode_group_store(),
     };
+
+    // shared connection pool for sqlx shared across the application.
+    let db = PgPoolOptions::new()
+        // TODO: update this comment from launchbadge
+        // The default connection limit for a Postgres server is 100 connections, minus 3 for superusers.
+        // Since we're using the default superuser we don't have to worry about this too much,
+        // although we should leave some connections available for manual access.
+        //
+        // If you're deploying your application with multiple replicas, then the total
+        // across all replicas should not exceed the Postgres connection limit.
+        .max_connections(config.pool_size)
+        .connect(&config.database_url.to_string())
+        .await
+        .context("could not connect to database_url")?;
+
+    // this embeds database migrations in the application binary so we can ensure the database
+    // is migrated correctly on startup
+    sqlx::migrate!().run(&db).await?;
+
+    // Finally, we spin up our API.
+    // http::serve(config, db).await?;
 
     // endpoints for each of the action groups.
     // action groups are broken into the two parts of the static data api.
@@ -190,26 +97,35 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // core schema
         //
         // equipment type endpoints
-        .route("/equipment-types", post(create_equipment_type))
-        .route("/equipment-types", get(get_equipment_types))
-        .route("/equipment-types/{id}", get(get_equipment_type_by_id))
-        .route("/equipment-types/{id}", post(update_equipment_type))
-        .route("/equipment-types/{id}/delete", post(delete_equipment_type))
+        .route(
+            "/api/v1/equipment-types",
+            get(get_equipment_types)
+                .post(not_implemented)
+        )
+        .route(
+            "/api/v1/equipment-types/{id}",
+            get(not_implemented)
+                .post(not_implemented)
+        )
+        .route(
+            "/api/v1/equipment-types/{id}/delete", 
+            post(not_implemented)
+        )
         //
         // equipment endpoints
-        .route("/equipment", get(get_equipment))
+        .route("/equipment", get(not_implemented))
         .route("/equipment/{id}", get(not_implemented))
         //
         // mode group endpoints
         .route("/mode-groups", post(not_implemented))
-        .route("/mode-groups", get(get_mode_groups))
+        .route("/mode-groups", get(not_implemented))
         .route("/mode-groups/{id}", get(not_implemented))
         .route("/mode-groups/{id}", post(not_implemented))
         .route("/mode-groups/{id}/delete", post(not_implemented))
         //
         // mode endpoints
         .route("/modes", post(not_implemented))
-        .route("/modes", get(get_modes))
+        .route("/modes", get(not_implemented))
         .route("/modes/{id}", get(not_implemented))
         .route("/modes/update", post(not_implemented))
         .route("/modes/delete/{id}", post(not_implemented))
