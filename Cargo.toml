@@ -1,15 +1,21 @@
 [package]
-name = "gathererMES"
+name = "gatherer_mes"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+anyhow = "1.0.98"
 axum = "0.8.4"
 chrono = { version = "0.4.41", features = ["serde"] }
+clap = { version = "4.5.41", features = ["derive", "env"] }
+dotenv = "0.15.0"
+env_logger = "0.11.8"
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.141"
+sqlx = { version = "0.8.6", features = ["runtime-tokio-native-tls", "postgres", "uuid", "time"] }
 tokio = { version = "1.46.1", features = ["full"] }
 tower = "0.5.2"
 tower-http = { version = "0.6.6", features = ["cors", "trace"] }
 tracing = "0.1.41"
 tracing-subscriber = "0.3.19"
+url = "2.5.4"
