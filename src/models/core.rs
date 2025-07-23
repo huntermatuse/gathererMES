@@ -9,13 +9,13 @@ pub struct EquipmentTypes {
     pub type_name: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct EquipmentMetadata {
     #[serde(flatten)]
     pub extra: HashMap<String, Value>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Equipment {
     pub equipment_id: i32,
     pub equipment_name: String,
@@ -27,40 +27,40 @@ pub struct Equipment {
     pub updated_at: Option<DateTime<Utc>>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct EquipmentModeGroupMapping {
     pub equipment_id: i32,
     pub mode_group_id: i32,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct ModeGroups {
     pub mode_group_id: i32,
     pub mode_group_name: String,
     pub mode_group_description: Option<String>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Modes {
     pub mode_id: i32,
     pub mode_group_id: i32,
     pub mode_description: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct EquipmentStateGroupMapping {
     pub equipment_id: i32,
     pub state_group_id: i8,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct StateGroup {
     pub state_group_id: i32,
     pub state_group_name: String,
     pub state_group_description: Option<String>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct State {
     pub state_id: i32,
     pub state_group_id: i32,
