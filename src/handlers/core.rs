@@ -83,7 +83,7 @@ impl Modes {
     // delete
 }
 
-pub fn init_equipment_store() -> EquipmentTypeStore {
+pub fn init_equipment_type_store() -> EquipmentTypeStore {
     let initial_data = vec![
         EquipmentTypes {
             type_id: 1,

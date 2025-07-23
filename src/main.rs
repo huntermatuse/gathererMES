@@ -13,13 +13,13 @@ mod handlers;
 mod models;
 
 use api::response::{ApiResponse, ErrorResponse, SuccessResponse};
-use handlers::core::{EquipmentStore, init_equipment_store};
+use handlers::core::{EquipmentTypeStore, init_equipment_type_store};
 use models::core::{Equipment, EquipmentTypes, ModeGroups, Modes};
 
 // app state to hold our data stores
 #[derive(Clone)]
 pub struct AppState {
-    pub equipment_types_store: EquipmentStore,
+    pub equipment_types_store: EquipmentTypeStore,
 }
 
 async fn health_check() -> Json<SuccessResponse<&'static str>> {
@@ -157,7 +157,7 @@ async fn not_implemented() -> Json<ApiResponse<ErrorResponse>> {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Initialize your data stores
     let app_state = AppState {
-        equipment_types_store: init_equipment_store(),
+        equipment_types_store: init_equipment_type_store(),
     };
 
     let app = Router::new()
