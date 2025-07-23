@@ -6,7 +6,6 @@ use axum::{
 };
 use chrono::Utc;
 use std::net::SocketAddr;
-use std::sync::{Arc, Mutex};
 
 mod api;
 mod handlers;

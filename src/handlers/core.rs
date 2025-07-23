@@ -1,4 +1,4 @@
-use crate::models::core::{EquipmentTypes, ModeGroups, Modes, StateGroup, State};
+use crate::models::core::{EquipmentTypes, ModeGroups, Modes, State, StateGroup};
 use std::sync::{Arc, Mutex};
 
 pub type EquipmentTypeStore = Arc<Mutex<Vec<EquipmentTypes>>>;
@@ -111,13 +111,11 @@ pub fn init_equipment_type_store() -> EquipmentTypeStore {
 }
 
 pub fn init_mode_group_store() -> ModeGroupStore {
-    let initial_data = vec![
-        ModeGroups {
-            mode_group_id: 1,
-            mode_group_name: "Default Mode Group".to_string(),
-            mode_group_description: Some("Default mode group for the MES system.".to_string())
-        }
-    ];
+    let initial_data = vec![ModeGroups {
+        mode_group_id: 1,
+        mode_group_name: "Default Mode Group".to_string(),
+        mode_group_description: Some("Default mode group for the MES system.".to_string()),
+    }];
 
     Arc::new(Mutex::new(initial_data))
 }
@@ -147,7 +145,7 @@ pub fn init_mode_store() -> ModesStore {
             mode_group_id: 1,
             mode_code: 4,
             mode_description: Some("Idle".to_string()),
-        },        
+        },
         Modes {
             mode_id: 4,
             mode_group_id: 1,
@@ -196,13 +194,11 @@ pub fn init_mode_store() -> ModesStore {
 }
 
 pub fn init_state_groups_store() -> StateGroupStore {
-    let initial_value = vec![
-        StateGroup {
-            state_group_id: 1, 
-            state_group_name: "Default State Group".to_string(),
-            state_group_description: Some("Default state group for the MES system.".to_string()),
-        }
-    ];
+    let initial_value = vec![StateGroup {
+        state_group_id: 1,
+        state_group_name: "Default State Group".to_string(),
+        state_group_description: Some("Default state group for the MES system.".to_string()),
+    }];
 
     Arc::new(Mutex::new(initial_value))
 }
@@ -232,7 +228,7 @@ pub fn init_state_store() -> StateStore {
             state_group_id: 1,
             state_code: 4,
             state_description: Some("Idle".to_string()),
-        },        
+        },
         State {
             state_id: 4,
             state_group_id: 1,
