@@ -543,7 +543,7 @@ mod tests {
 
     #[sqlx::test]
     async fn test_create_mode_service(pool: PgPool) -> sqlx::Result<()> {
-        let service = ModeService::new(pool);
+        let _service = ModeService::new(pool);
         // Just verify the service can be created
         assert!(true);
         Ok(())
@@ -1063,7 +1063,7 @@ mod tests {
         );
 
         // Test too many bulk create
-        let too_many: Vec<(Uuid, &str)> = (0..101).map(|i| (Uuid::new_v4(), "test")).collect();
+        let too_many: Vec<(Uuid, &str)> = (0..101).map(|_i| (Uuid::new_v4(), "test")).collect();
         let result = service.bulk_create(too_many).await;
         assert!(result.is_err());
         assert!(
