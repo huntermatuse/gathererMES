@@ -462,10 +462,9 @@ mod tests {
         body::Body,
         http::{Request, StatusCode},
     };
-    use serde_json::{Value, json};
+    use serde_json::json;
     use sqlx::PgPool;
     use tower::ServiceExt;
-    use uuid::Uuid;
 
     // Helper function to create test service
     fn create_test_service(pool: PgPool) -> ModeGroupService {

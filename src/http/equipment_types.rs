@@ -124,7 +124,7 @@ pub struct PaginationQuery {
 pub struct SearchQuery {
     pub q: String,
     #[serde(flatten)]
-    pub pagination: PaginationQuery,
+    pub _pagination: PaginationQuery,
 }
 
 #[derive(Deserialize)]

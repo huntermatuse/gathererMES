@@ -1,5 +1,7 @@
 use crate::config::Config;
 use crate::services::equipment_type_service::EquipmentTypeService;
+use crate::services::mode_group_service::ModeGroupService;
+use crate::services::mode_service::ModeService;
 use anyhow::Context;
 use axum::{Extension, Router, routing::get_service};
 use sqlx::PgPool;
@@ -45,6 +47,8 @@ pub struct ApiContext {
 
 pub async fn serve(config: Config, db: PgPool) -> anyhow::Result<()> {
     let equipment_type_service = EquipmentTypeService::new(db.clone());
+    let mode_group_service = ModeGroupService::new(db.clone());
+    let mode_service = ModeService::new(db.clone());
 
     let app = api_router()
         .layer(
@@ -55,6 +59,8 @@ pub async fn serve(config: Config, db: PgPool) -> anyhow::Result<()> {
                     db,
                 }))
                 .layer(Extension(equipment_type_service))
+                .layer(Extension(mode_group_service))
+                .layer(Extension(mode_service))
                 .layer(TraceLayer::new_for_http()),
         )
         .fallback(response::handler_404);
