@@ -21,15 +21,13 @@ models -> models module
 - main.rs
 - database/
 - handlers/ business logic
-- api/
-    - models/ api request/response logic
-    - routes/ api routes
+- http/
 - models/ structs for core and operations also state machines for flows
 - tests/ <- end to end tests
 
 ┌─────────────────────────────────────────────────────────┐
-│  routes/     │ "How to reach endpoints"                 │
-│  api/        │ "What the endpoints accept/return"       │  
+│  http/       │ "How to reach endpoints"                 │
+│  http/       │ "What the endpoints accept/return"       │  
 │  handlers/   │ "What business logic to execute"         │
 │  database/   │ "How to persist/retrieve data"           │
 │  models/     │ "What the data looks like"               │
@@ -45,12 +43,12 @@ src/
 │   ├── equipment.rs        // Equipment-related routes
 │   ├── modes.rs            // Mode-related routes  
 │   └── operations.rs       // Work orders, jobs, etc.
-├── api/
+├── http/
 │   ├── mod.rs
 │   ├── requests/           // Input DTOs
 │   ├── responses/          // Output DTOs  
 │   └── validation/         // Input validation
-├── handlers/
+├── services/
 │   ├── mod.rs
 │   ├── equipment.rs        // Equipment business logic
 │   ├── modes.rs            // Mode business logic
@@ -62,9 +60,9 @@ src/
 │   └── connection.rs       // DB connection handling
 ├── models/
 │   ├── mod.rs
-│   ├── core/               // Core domain models
-│   ├── operations/         // Operations models
-│   └── state_machines/     // Workflow state machines
+│   ├── core.rs             // Core domain models
+│   ├── operations.rs       // Operations models
+│   └── state_machines.rs   // Workflow state machines
 └── tests/
     ├── integration/        // End-to-end tests
     ├── unit/               // Unit tests
