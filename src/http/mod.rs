@@ -65,11 +65,11 @@ pub async fn serve(config: Config, db: PgPool) -> anyhow::Result<()> {
         )
         .fallback(response::handler_404);
 
-    let listener = TcpListener::bind("0.0.0.0:19080")
+    let listener = TcpListener::bind("0.0.0.0:19060")
         .await
         .context("failed to bind to address")?;
 
-    println!("HTTP server listening on http://0.0.0.0:19080");
+    println!("HTTP server listening on http://0.0.0.0:19060");
 
     axum::serve(listener, app)
         .await
