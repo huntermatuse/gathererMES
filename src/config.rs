@@ -20,7 +20,6 @@ pub struct Config {
     // TODO: make grpc work
     // #[clap(long, env = "GRPC_BIND_ADDRESS", default_value = "0.0.0.0:50051")]
     // pub grpc_bind_address: String,
-
     /// log level
     #[arg(long, env = "RUST_LOG", default_value = "info")]
     pub log_level: String,

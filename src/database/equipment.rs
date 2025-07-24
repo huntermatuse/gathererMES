@@ -1,8 +1,8 @@
+use serde_json::Value;
 use sqlx::PgPool;
+use std::collections::HashMap;
 use time::OffsetDateTime;
 use uuid::Uuid;
-use serde_json::Value;
-use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 pub struct EquipmentMetadata {
@@ -228,8 +228,8 @@ impl EquipmentQueries {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use uuid::Uuid;
     use serde_json::json;
+    use uuid::Uuid;
 
     // helper to create a test equipment type
     async fn create_test_equipment_type(pool: &PgPool, name: &str) -> sqlx::Result<Uuid> {
@@ -239,7 +239,7 @@ mod tests {
         )
         .fetch_one(pool)
         .await?;
-        
+
         Ok(result)
     }
 
@@ -248,14 +248,8 @@ mod tests {
         let type_id = create_test_equipment_type(&pool, "Test Type").await?;
         let equipment_name = "Test Equipment";
 
-        let equipment = EquipmentQueries::create(
-            &pool,
-            equipment_name,
-            type_id,
-            None,
-            None,
-            None,
-        ).await?;
+        let equipment =
+            EquipmentQueries::create(&pool, equipment_name, type_id, None, None, None).await?;
 
         assert_eq!(equipment.equipment_name, equipment_name);
         assert_eq!(equipment.equipment_type_id, type_id);
@@ -270,16 +264,10 @@ mod tests {
     #[sqlx::test]
     async fn test_create_equipment_with_parent(pool: PgPool) -> sqlx::Result<()> {
         let type_id = create_test_equipment_type(&pool, "Test Type").await?;
-        
+
         // Create parent equipment
-        let parent = EquipmentQueries::create(
-            &pool,
-            "Parent Equipment",
-            type_id,
-            None,
-            None,
-            None,
-        ).await?;
+        let parent =
+            EquipmentQueries::create(&pool, "Parent Equipment", type_id, None, None, None).await?;
 
         // Create child equipment
         let child = EquipmentQueries::create(
@@ -289,7 +277,8 @@ mod tests {
             Some(parent.equipment_id),
             None,
             None,
-        ).await?;
+        )
+        .await?;
 
         assert_eq!(child.equipment_parent_id, Some(parent.equipment_id));
 
@@ -308,7 +297,8 @@ mod tests {
             None,
             None,
             Some(&metadata),
-        ).await?;
+        )
+        .await?;
 
         assert!(equipment.equipment_metadata.is_some());
 
@@ -318,15 +308,23 @@ mod tests {
     #[sqlx::test]
     async fn test_get_all_equipment(pool: PgPool) -> sqlx::Result<()> {
         let type_id = create_test_equipment_type(&pool, "Test Type").await?;
-        
+
         let eq1 = EquipmentQueries::create(&pool, "Equipment 1", type_id, None, None, None).await?;
         let eq2 = EquipmentQueries::create(&pool, "Equipment 2", type_id, None, None, None).await?;
 
         let all_equipment = EquipmentQueries::get_all(&pool).await?;
 
         assert!(all_equipment.len() >= 2);
-        assert!(all_equipment.iter().any(|e| e.equipment_id == eq1.equipment_id));
-        assert!(all_equipment.iter().any(|e| e.equipment_id == eq2.equipment_id));
+        assert!(
+            all_equipment
+                .iter()
+                .any(|e| e.equipment_id == eq1.equipment_id)
+        );
+        assert!(
+            all_equipment
+                .iter()
+                .any(|e| e.equipment_id == eq2.equipment_id)
+        );
 
         Ok(())
     }
@@ -334,7 +332,8 @@ mod tests {
     #[sqlx::test]
     async fn test_get_by_id(pool: PgPool) -> sqlx::Result<()> {
         let type_id = create_test_equipment_type(&pool, "Test Type").await?;
-        let created = EquipmentQueries::create(&pool, "Test Equipment", type_id, None, None, None).await?;
+        let created =
+            EquipmentQueries::create(&pool, "Test Equipment", type_id, None, None, None).await?;
 
         let found = EquipmentQueries::get_by_id(&pool, created.equipment_id).await?;
 
@@ -361,15 +360,26 @@ mod tests {
         let type_id1 = create_test_equipment_type(&pool, "Type 1").await?;
         let type_id2 = create_test_equipment_type(&pool, "Type 2").await?;
 
-        let eq1 = EquipmentQueries::create(&pool, "Equipment 1", type_id1, None, None, None).await?;
-        let _eq2 = EquipmentQueries::create(&pool, "Equipment 2", type_id2, None, None, None).await?;
-        let eq3 = EquipmentQueries::create(&pool, "Equipment 3", type_id1, None, None, None).await?;
+        let eq1 =
+            EquipmentQueries::create(&pool, "Equipment 1", type_id1, None, None, None).await?;
+        let _eq2 =
+            EquipmentQueries::create(&pool, "Equipment 2", type_id2, None, None, None).await?;
+        let eq3 =
+            EquipmentQueries::create(&pool, "Equipment 3", type_id1, None, None, None).await?;
 
         let type1_equipment = EquipmentQueries::get_by_type_id(&pool, type_id1).await?;
 
         assert_eq!(type1_equipment.len(), 2);
-        assert!(type1_equipment.iter().any(|e| e.equipment_id == eq1.equipment_id));
-        assert!(type1_equipment.iter().any(|e| e.equipment_id == eq3.equipment_id));
+        assert!(
+            type1_equipment
+                .iter()
+                .any(|e| e.equipment_id == eq1.equipment_id)
+        );
+        assert!(
+            type1_equipment
+                .iter()
+                .any(|e| e.equipment_id == eq3.equipment_id)
+        );
 
         Ok(())
     }
@@ -377,17 +387,41 @@ mod tests {
     #[sqlx::test]
     async fn test_get_by_parent_id(pool: PgPool) -> sqlx::Result<()> {
         let type_id = create_test_equipment_type(&pool, "Test Type").await?;
-        
+
         let parent = EquipmentQueries::create(&pool, "Parent", type_id, None, None, None).await?;
-        let child1 = EquipmentQueries::create(&pool, "Child 1", type_id, Some(parent.equipment_id), None, None).await?;
-        let child2 = EquipmentQueries::create(&pool, "Child 2", type_id, Some(parent.equipment_id), None, None).await?;
+        let child1 = EquipmentQueries::create(
+            &pool,
+            "Child 1",
+            type_id,
+            Some(parent.equipment_id),
+            None,
+            None,
+        )
+        .await?;
+        let child2 = EquipmentQueries::create(
+            &pool,
+            "Child 2",
+            type_id,
+            Some(parent.equipment_id),
+            None,
+            None,
+        )
+        .await?;
         let _orphan = EquipmentQueries::create(&pool, "Orphan", type_id, None, None, None).await?;
 
         let children = EquipmentQueries::get_by_parent_id(&pool, Some(parent.equipment_id)).await?;
 
         assert_eq!(children.len(), 2);
-        assert!(children.iter().any(|e| e.equipment_id == child1.equipment_id));
-        assert!(children.iter().any(|e| e.equipment_id == child2.equipment_id));
+        assert!(
+            children
+                .iter()
+                .any(|e| e.equipment_id == child1.equipment_id)
+        );
+        assert!(
+            children
+                .iter()
+                .any(|e| e.equipment_id == child2.equipment_id)
+        );
 
         Ok(())
     }
@@ -395,14 +429,24 @@ mod tests {
     #[sqlx::test]
     async fn test_get_enabled(pool: PgPool) -> sqlx::Result<()> {
         let type_id = create_test_equipment_type(&pool, "Test Type").await?;
-        
-        let enabled = EquipmentQueries::create(&pool, "Enabled", type_id, None, Some(true), None).await?;
-        let disabled = EquipmentQueries::create(&pool, "Disabled", type_id, None, Some(false), None).await?;
+
+        let enabled =
+            EquipmentQueries::create(&pool, "Enabled", type_id, None, Some(true), None).await?;
+        let disabled =
+            EquipmentQueries::create(&pool, "Disabled", type_id, None, Some(false), None).await?;
 
         let enabled_equipment = EquipmentQueries::get_enabled(&pool).await?;
 
-        assert!(enabled_equipment.iter().any(|e| e.equipment_id == enabled.equipment_id));
-        assert!(!enabled_equipment.iter().any(|e| e.equipment_id == disabled.equipment_id));
+        assert!(
+            enabled_equipment
+                .iter()
+                .any(|e| e.equipment_id == enabled.equipment_id)
+        );
+        assert!(
+            !enabled_equipment
+                .iter()
+                .any(|e| e.equipment_id == disabled.equipment_id)
+        );
 
         Ok(())
     }
@@ -410,7 +454,9 @@ mod tests {
     #[sqlx::test]
     async fn test_set_enabled(pool: PgPool) -> sqlx::Result<()> {
         let type_id = create_test_equipment_type(&pool, "Test Type").await?;
-        let created = EquipmentQueries::create(&pool, "Test Equipment", type_id, None, Some(true), None).await?;
+        let created =
+            EquipmentQueries::create(&pool, "Test Equipment", type_id, None, Some(true), None)
+                .await?;
 
         let updated = EquipmentQueries::set_enabled(&pool, created.equipment_id, false).await?;
 
@@ -425,10 +471,12 @@ mod tests {
     #[sqlx::test]
     async fn test_update_metadata(pool: PgPool) -> sqlx::Result<()> {
         let type_id = create_test_equipment_type(&pool, "Test Type").await?;
-        let created = EquipmentQueries::create(&pool, "Test Equipment", type_id, None, None, None).await?;
+        let created =
+            EquipmentQueries::create(&pool, "Test Equipment", type_id, None, None, None).await?;
         let new_metadata = json!({"updated": true, "version": 2});
 
-        let updated = EquipmentQueries::update_metadata(&pool, created.equipment_id, &new_metadata).await?;
+        let updated =
+            EquipmentQueries::update_metadata(&pool, created.equipment_id, &new_metadata).await?;
 
         assert!(updated.is_some());
         let updated = updated.unwrap();
@@ -441,7 +489,8 @@ mod tests {
     #[sqlx::test]
     async fn test_delete_equipment(pool: PgPool) -> sqlx::Result<()> {
         let type_id = create_test_equipment_type(&pool, "Test Type").await?;
-        let created = EquipmentQueries::create(&pool, "To Delete", type_id, None, None, None).await?;
+        let created =
+            EquipmentQueries::create(&pool, "To Delete", type_id, None, None, None).await?;
 
         let deleted = EquipmentQueries::delete(&pool, created.equipment_id).await?;
         assert!(deleted);
@@ -466,7 +515,8 @@ mod tests {
     #[sqlx::test]
     async fn test_exists(pool: PgPool) -> sqlx::Result<()> {
         let type_id = create_test_equipment_type(&pool, "Test Type").await?;
-        let created = EquipmentQueries::create(&pool, "Exists Test", type_id, None, None, None).await?;
+        let created =
+            EquipmentQueries::create(&pool, "Exists Test", type_id, None, None, None).await?;
 
         let exists = EquipmentQueries::exists(&pool, created.equipment_id).await?;
         assert!(exists);
@@ -483,7 +533,8 @@ mod tests {
         let random_type_id = Uuid::new_v4();
 
         // Should fail due to foreign key constraint
-        let result = EquipmentQueries::create(&pool, "Invalid", random_type_id, None, None, None).await;
+        let result =
+            EquipmentQueries::create(&pool, "Invalid", random_type_id, None, None, None).await;
         assert!(result.is_err());
 
         if let Err(sqlx::Error::Database(db_err)) = result {

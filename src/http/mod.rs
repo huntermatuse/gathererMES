@@ -10,6 +10,8 @@ use tower_http::services::ServeFile;
 use tower_http::trace::TraceLayer;
 
 pub mod equipment_types;
+pub mod mode;
+pub mod mode_groups;
 pub mod response;
 
 pub mod date_format {
@@ -22,7 +24,8 @@ pub mod date_format {
     {
         match date {
             Some(dt) => {
-                let s = dt.format(&time::format_description::well_known::Rfc3339)
+                let s = dt
+                    .format(&time::format_description::well_known::Rfc3339)
                     .map_err(serde::ser::Error::custom)?;
                 serializer.serialize_str(&s)
             }
@@ -46,7 +49,8 @@ pub async fn serve(config: Config, db: PgPool) -> anyhow::Result<()> {
     let app = api_router()
         .layer(
             ServiceBuilder::new()
-                .layer(Extension(ApiContext { // ApiContext is right here? not sure what the issue is
+                .layer(Extension(ApiContext {
+                    // ApiContext is right here? not sure what the issue is
                     config: Arc::new(config),
                     db,
                 }))
@@ -72,24 +76,26 @@ fn api_router() -> Router {
             "/favicon.ico",
             get_service(ServeFile::new("static/favicon.ico")),
         )
+        // the order in which i made these
         .merge(equipment_types::router())
+        .merge(mode_groups::router())
+        .merge(mode::router())
 }
-
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use axum::http::{Method, Request, StatusCode};
     use axum::body::Body;
-    use tower::ServiceExt; // for `oneshot`
+    use axum::http::{Method, Request, StatusCode};
     use std::fs;
     use tempfile::TempDir;
+    use tower::ServiceExt; // for `oneshot`
 
     // Best approach: Create app with minimal setup
     async fn create_test_app() -> Router {
         // For routing tests, we can create the router without the database layer
         // Since we're only testing that routes return 404, we don't need real database
-        
+
         let config = Config {
             database_url: "postgresql://test:test@localhost/test".parse().unwrap(),
             pool_size: 1,
@@ -102,7 +108,7 @@ mod tests {
         Router::new()
             .route(
                 "/favicon.ico",
-                get_service(ServeFile::new("static/favicon.ico"))
+                get_service(ServeFile::new("static/favicon.ico")),
             )
             // If you have API routes that don't immediately need database, add them:
             // .merge(core::router())
@@ -115,7 +121,8 @@ mod tests {
         let temp_dir = TempDir::new().expect("Failed to create temp dir");
         let static_dir = temp_dir.path().join("static");
         fs::create_dir_all(&static_dir).expect("Failed to create static dir");
-        fs::write(static_dir.join("favicon.ico"), b"test favicon").expect("Failed to write favicon");
+        fs::write(static_dir.join("favicon.ico"), b"test favicon")
+            .expect("Failed to write favicon");
 
         let original_dir = std::env::current_dir().expect("Failed to get current dir");
         std::env::set_current_dir(&temp_dir).expect("Failed to change directory");
@@ -123,14 +130,14 @@ mod tests {
         let app = create_test_app().await;
 
         std::env::set_current_dir(original_dir).expect("Failed to restore directory");
-        
+
         (app, temp_dir)
     }
 
     #[tokio::test]
     async fn test_favicon_is_accessible() {
         let (app, _temp_dir) = create_test_app_with_files().await;
-        
+
         let request = Request::builder()
             .method(Method::GET)
             .uri("/favicon.ico")
@@ -144,11 +151,11 @@ mod tests {
     #[tokio::test]
     async fn test_common_fuzzing_attacks() {
         let app = create_test_app().await;
-        
+
         let fuzzing_paths = vec![
             "/.vscode/sftp.json",
             "/config.yml",
-            "/config.xml", 
+            "/config.xml",
             "/etc/ssl/private/server.key",
             "/config.php",
             "/.svn/wc.db",
@@ -192,11 +199,12 @@ mod tests {
                 .unwrap();
 
             let response = app.clone().oneshot(request).await.unwrap();
-            
+
             assert_eq!(
-                response.status(), 
+                response.status(),
                 StatusCode::NOT_FOUND,
-                "Fuzzing attack path {} should return 404", path
+                "Fuzzing attack path {} should return 404",
+                path
             );
         }
     }
@@ -204,7 +212,7 @@ mod tests {
     #[tokio::test]
     async fn test_git_directory_not_accessible() {
         let app = create_test_app().await;
-        
+
         let git_paths = vec![
             "/.git",
             "/.git/",
@@ -222,11 +230,12 @@ mod tests {
                 .unwrap();
 
             let response = app.clone().oneshot(request).await.unwrap();
-            
+
             assert_eq!(
-                response.status(), 
+                response.status(),
                 StatusCode::NOT_FOUND,
-                "Path {} should not be accessible", path
+                "Path {} should not be accessible",
+                path
             );
         }
     }
@@ -234,7 +243,7 @@ mod tests {
     #[tokio::test]
     async fn test_env_file_not_accessible() {
         let app = create_test_app().await;
-        
+
         let env_paths = vec![
             "/.env",
             "/.env.local",
@@ -250,11 +259,12 @@ mod tests {
                 .unwrap();
 
             let response = app.clone().oneshot(request).await.unwrap();
-            
+
             assert_eq!(
-                response.status(), 
+                response.status(),
                 StatusCode::NOT_FOUND,
-                "Environment file {} should not be accessible", path
+                "Environment file {} should not be accessible",
+                path
             );
         }
     }
@@ -262,7 +272,7 @@ mod tests {
     #[tokio::test]
     async fn test_directory_traversal_attempts() {
         let app = create_test_app().await;
-        
+
         let traversal_paths = vec![
             "/../etc/passwd",
             "/static/../../etc/passwd",
@@ -282,11 +292,12 @@ mod tests {
                 .unwrap();
 
             let response = app.clone().oneshot(request).await.unwrap();
-            
+
             assert_eq!(
-                response.status(), 
+                response.status(),
                 StatusCode::NOT_FOUND,
-                "Directory traversal path {} should not be accessible", path
+                "Directory traversal path {} should not be accessible",
+                path
             );
         }
     }
@@ -294,7 +305,7 @@ mod tests {
     #[tokio::test]
     async fn test_ssh_and_crypto_files() {
         let app = create_test_app().await;
-        
+
         let crypto_paths = vec![
             "/.ssh/id_rsa",
             "/.ssh/id_ecdsa",
@@ -315,11 +326,12 @@ mod tests {
                 .unwrap();
 
             let response = app.clone().oneshot(request).await.unwrap();
-            
+
             assert_eq!(
-                response.status(), 
+                response.status(),
                 StatusCode::NOT_FOUND,
-                "Cryptographic file {} should not be accessible", path
+                "Cryptographic file {} should not be accessible",
+                path
             );
         }
     }
@@ -327,7 +339,7 @@ mod tests {
     #[tokio::test]
     async fn test_post_requests_with_malicious_paths() {
         let app = create_test_app().await;
-        
+
         let post_paths = vec![
             "/hello.world",
             "/.env",
@@ -344,11 +356,13 @@ mod tests {
                 .unwrap();
 
             let response = app.clone().oneshot(request).await.unwrap();
-            
+
             assert!(
-                response.status() == StatusCode::NOT_FOUND || 
-                response.status() == StatusCode::METHOD_NOT_ALLOWED,
-                "POST to {} should return 404 or 405, got {}", path, response.status()
+                response.status() == StatusCode::NOT_FOUND
+                    || response.status() == StatusCode::METHOD_NOT_ALLOWED,
+                "POST to {} should return 404 or 405, got {}",
+                path,
+                response.status()
             );
         }
     }
@@ -356,7 +370,7 @@ mod tests {
     #[tokio::test]
     async fn test_different_http_methods() {
         let app = create_test_app().await;
-        
+
         let methods = vec![
             Method::PUT,
             Method::DELETE,
@@ -373,14 +387,14 @@ mod tests {
                 .unwrap();
 
             let response = app.clone().oneshot(request).await.unwrap();
-            
+
             assert!(
-                response.status() == StatusCode::NOT_FOUND || 
-                response.status() == StatusCode::METHOD_NOT_ALLOWED,
-                "{} to /.env should return 404 or 405, got {}", 
-                method, response.status()
+                response.status() == StatusCode::NOT_FOUND
+                    || response.status() == StatusCode::METHOD_NOT_ALLOWED,
+                "{} to /.env should return 404 or 405, got {}",
+                method,
+                response.status()
             );
         }
     }
 }
-
