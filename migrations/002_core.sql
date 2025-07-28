@@ -176,3 +176,35 @@ CREATE INDEX idx_equipment_enabled ON core.equipment(equipment_enabled);
 CREATE INDEX idx_equipment_metadata ON core.equipment USING GIN(equipment_metadata);
 CREATE INDEX idx_mode_group ON core.mode(mode_group_id);
 CREATE INDEX idx_state_group ON core.state(state_group_id);
+
+ALTER TABLE core.equipment_mode_group_mapping 
+DROP CONSTRAINT IF EXISTS equipment_mode_group_mapping_equipment_id_fkey;
+
+ALTER TABLE core.equipment_mode_group_mapping 
+ADD CONSTRAINT equipment_mode_group_mapping_equipment_id_fkey 
+FOREIGN KEY (equipment_id) REFERENCES core.equipment(equipment_id) 
+ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE core.equipment_mode_group_mapping 
+DROP CONSTRAINT IF EXISTS equipment_mode_group_mapping_mode_group_id_fkey;
+
+ALTER TABLE core.equipment_mode_group_mapping 
+ADD CONSTRAINT equipment_mode_group_mapping_mode_group_id_fkey 
+FOREIGN KEY (mode_group_id) REFERENCES core.mode_group(mode_group_id) 
+ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE core.equipment_state_group_mapping 
+DROP CONSTRAINT IF EXISTS equipment_state_group_mapping_equipment_id_fkey;
+
+ALTER TABLE core.equipment_state_group_mapping 
+ADD CONSTRAINT equipment_state_group_mapping_equipment_id_fkey 
+FOREIGN KEY (equipment_id) REFERENCES core.equipment(equipment_id) 
+ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE core.equipment_state_group_mapping 
+DROP CONSTRAINT IF EXISTS equipment_state_group_mapping_state_group_id_fkey;
+
+ALTER TABLE core.equipment_state_group_mapping 
+ADD CONSTRAINT equipment_state_group_mapping_state_group_id_fkey 
+FOREIGN KEY (state_group_id) REFERENCES core.state_group(state_group_id) 
+ON DELETE CASCADE ON UPDATE CASCADE;
